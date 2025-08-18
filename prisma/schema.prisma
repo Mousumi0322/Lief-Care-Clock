@@ -1,0 +1,63 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole @default(CARE_WORKER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  timeEntries TimeEntry[]
+
+  @@map("users")
+}
+
+model LocationPerimeter {
+  id        String   @id @default(cuid())
+  name      String
+  latitude  Float
+  longitude Float
+  radius    Float    // in kilometers
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("location_perimeters")
+}
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  userId      String
+  clockInTime DateTime
+  clockInLat  Float?
+  clockInLng  Float?
+  clockInNote String?
+  clockOutTime DateTime?
+  clockOutLat  Float?
+  clockOutLng  Float?
+  clockOutNote String?
+  totalHours   Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("time_entries")
+}
+
+enum UserRole {
+  MANAGER
+  CARE_WORKER
+}

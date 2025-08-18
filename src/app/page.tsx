@@ -1,95 +1,142 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import styles from './page.module.css';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Box, Button, Text, Card, CardBody, CardHeader } from 'grommet';
+import RoleSelector from '@/components/RoleSelector';
+import { useRouter } from 'next/navigation';
 
-export default function Home() {
+const Page = () => {
+  const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
+  const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
+  
+  useEffect(() => {
+    // Check if user is authenticated and has a stored role
+    if (isAuthenticated && user?.email && typeof window !== 'undefined') {
+      const storedRole = localStorage.getItem(`userRole_${user.email}`);
+      setUserRole(storedRole);
+      
+      // If user has a stored role, redirect to the appropriate page
+      if (storedRole === 'manager') {
+        router.push('/manager');
+      } else if (storedRole === 'care-worker') {
+        router.push('/care-worker');
+      } else {
+        // If no stored role, show the role selector
+        setShowRoleSelector(true);
+      }
+    }
+  }, [isAuthenticated, user, router]);
+  
+  // Function to reset user role (for testing)
+  const resetRole = () => {
+    if (user?.email) {
+      localStorage.removeItem(`userRole_${user.email}`);
+      setUserRole(null);
+      setShowRoleSelector(true);
+    }
+  };
+  
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+    <div className={styles.container}>
+      <div className={styles.content}>
+        {/* Logo and Header */}
+        <div className={styles.header}>
+          <Image
+            src="/lief-main-logo.svg"
+            alt="Lief Care Clock Logo"
+            width={120}
+            height={60}
+            className={styles.logo}
+          />
+          <h1 className={styles.title}>Welcome to Care Clock</h1>
+          <p className={styles.subtitle}>
+            Your comprehensive care management solution
+          </p>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Authentication Status */}
+        <div className={styles.roleSelection}>
+          {isLoading ? (
+            <h2 className={styles.roleTitle}>Loading...</h2>
+          ) : isAuthenticated ? (
+            showRoleSelector ? (
+              // Show role selector if user doesn't have a stored role
+              <RoleSelector />
+            ) : (
+              // Show welcome message and loading indicator while redirecting
+              <>
+                <h2 className={styles.roleTitle}>Welcome, {user?.name}!</h2>
+                <p className={styles.roleDescription}>
+                  Redirecting you to your dashboard...
+                </p>
+                <Box align="center" margin={{ top: 'medium' }}>
+                  <Button 
+                    secondary 
+                    label="Log Out" 
+                    onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                    margin={{ top: 'medium' }}
+                  />
+                  {/* For testing: Button to reset role */}
+                  <Button 
+                    plain
+                    label="Reset Role" 
+                    onClick={resetRole}
+                    margin={{ top: 'small' }}
+                    size="small"
+                  />
+                </Box>
+              </>
+            )
+          ) : (
+            <>
+              <h2 className={styles.roleTitle}>Welcome to Care Clock</h2>
+              <p className={styles.roleDescription}>
+                Please log in to access the care management system
+              </p>
+              
+              <Box align="center" margin={{ top: 'medium' }}>
+                <Button 
+                  primary 
+                  size="large" 
+                  label="Log In / Sign Up" 
+                  onClick={() => loginWithRedirect()} 
+                  color="brand"
+                />
+                <Text size="small" margin={{ top: 'small' }}>
+                  Secure authentication powered by Auth0
+                </Text>
+              </Box>
+            </>
+          )}
+        </div>
+
+        {/* Features Preview */}
+        <div className={styles.features}>
+          <div className={styles.feature}>
+            <div className={styles.featureIcon}>⏰</div>
+            <span>Time Tracking</span>
+          </div>
+          <div className={styles.feature}>
+            <div className={styles.featureIcon}>📊</div>
+            <span>Analytics</span>
+          </div>
+          <div className={styles.feature}>
+            <div className={styles.featureIcon}>👥</div>
+            <span>Team Management</span>
+          </div>
+          <div className={styles.feature}>
+            <div className={styles.featureIcon}>📱</div>
+            <span>Mobile Friendly</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default Page;

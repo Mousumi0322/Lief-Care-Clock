@@ -2,6 +2,10 @@
 
 A comprehensive care management system built with Next.js, Grommet UI, and location-based time tracking.
 
+## 🚀 Live Demo
+The application is deployed on Vercel:  
+[https://lief-care-clock-management.vercel.app/](https://lief-care-clock-management.vercel.app/)
+
 ## Features
 
 ### For Care Workers
